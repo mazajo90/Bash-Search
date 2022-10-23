@@ -19,6 +19,7 @@ main_url="https://htbmachines.github.io/bundle.js"
 function helpPanel(){
     echo -e "\n${green}[+] Uso:${end}"
     echo -e "\t${green}u) Descargar o actulizar archivos${end}"
+    echo -e "\t${grenn}i) Busqueda por dirección IP${end}"
     echo -e "\t${green}m) Buscar por nombre de maquina${end}"
     echo -e "\t${green}h) Mostrar panel de ayuda${end}"
 }
@@ -55,11 +56,19 @@ function searchMachine(){
 }
 
 
+function searchIpAddress(){ 
+    ipAddress="$1"
+    machineName="$(cat bundle.js | grep "ip: \"$ipAddress\"" -B 3 | grep "name: " | awk 'NF{print $NF}' | tr -d '"' | tr -d ',')"
+    echo -e "\nLa maquina correspondiente para la IP $ipAddress es: ${green}$machineName\n${end}"
+
+}
+
 declare -i parameter_counter=0
 
-while getopts "m:uh" arg; do
+while getopts "m:ui:h" arg; do
     case $arg in
       m) machineName=$OPTARG; let parameter_counter+=1;;
+      i) ipAddress=$OPTARG; let parameter_counter+=3;;
       u) let parameter_counter+=2;;
       h) ;;
     esac
@@ -68,7 +77,10 @@ done
 if [ $parameter_counter -eq 1 ]; then
       searchMachine $machineName
 elif [ $parameter_counter -eq 2 ]; then
-    updateFiles
+      updateFiles
+elif [ $parameter_counter -eq 3 ]; then
+      searchIpAddress $ipAddress
 else
     helpPanel
 fi
+
