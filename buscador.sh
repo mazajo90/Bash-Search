@@ -21,6 +21,7 @@ function helpPanel(){
     echo -e "\t${green}u) Descargar o actulizar archivos${end}"
     echo -e "\t${grenn}i) Busqueda por dirección IP${end}"
     echo -e "\t${green}m) Buscar por nombre de maquina${end}"
+    echo -e "\t${green}y) Link de YouTube maquina${end}"
     echo -e "\t${green}h) Mostrar panel de ayuda${end}"
 }
 
@@ -50,26 +51,50 @@ function updateFiles(){
 }
 
 function searchMachine(){
- machineName="$1"
- echo -e "\nListando maquinas: ${green}$machineName\n${end}"
- cat bundle.js | awk "/name: \"$machineName\"/,/resuelta:/" | grep -vE "id:|sku:|resuelta:" | tr -d '"' | tr -d ',' | sed 's/^ *//'
+    machineName="$1"
+    machineNameCheck="$(cat bundle.js | awk "/name: \"$machineName\"/,/resuelta:/" | grep -vE "id:|sku:|resuelta:" | tr -d '"' | tr -d ',' | sed 's/^ *//')"
+
+    if [ "$machineNameCheck" ]; then
+   	 echo -e "\nListando maquinas: ${green}$machineName\n${end}"
+	 cat bundle.js | awk "/name: \"$machineName\"/,/resuelta:/" | grep -vE "id:|sku:|resuelta:" | tr -d '"' | tr -d ',' | sed 's/^ *//'
+    else
+	 echo -e "\n${red}La maquina proporcionada no existe${end}"
+    fi
 }
 
 
 function searchIpAddress(){ 
     ipAddress="$1"
     machineName="$(cat bundle.js | grep "ip: \"$ipAddress\"" -B 3 | grep "name: " | awk 'NF{print $NF}' | tr -d '"' | tr -d ',')"
-    echo -e "\nLa maquina correspondiente para la IP $ipAddress es: ${green}$machineName\n${end}"
+
+    if [ "$machineName" ]; then
+	echo -e "\nLa maquina correspondiente para la IP $ipAddress es: ${green}$machineName\n${end}"
+    else
+	echo -e "\n${red}La IP proporcionada no corresponde a ninguna maquina${end}"
+    fi
+
+}
+
+function searchLink(){
+    machineName="$1"
+    youtubeLink="$(cat bundle.js | awk "/name: \"$machineName\"/,/resuelta:/" | grep -vE "id:|sku:|resuelta:" | tr -d '"' | tr -d ',' | sed 's/^ *//' | grep youtube | awk 'NF{print $NF}')"
+    
+   if [ "$youtubeLink" ]; then
+	echo -e "\n${green}El tutorial de yootube es: $youtubeLink${end}"
+   else
+	echo -e "\n${red}Este Link no existe${end}"
+   fi
 
 }
 
 declare -i parameter_counter=0
 
-while getopts "m:ui:h" arg; do
+while getopts "m:ui:y:h" arg; do
     case $arg in
-      m) machineName=$OPTARG; let parameter_counter+=1;;
-      i) ipAddress=$OPTARG; let parameter_counter+=3;;
+      m) machineName="$OPTARG"; let parameter_counter+=1;;
       u) let parameter_counter+=2;;
+      i) ipAddress="$OPTARG"; let parameter_counter+=3;;
+      y) machineName="$OPTARG"; let parameter_counter+=4;;
       h) ;;
     esac
 done
@@ -80,6 +105,8 @@ elif [ $parameter_counter -eq 2 ]; then
       updateFiles
 elif [ $parameter_counter -eq 3 ]; then
       searchIpAddress $ipAddress
+elif [ $parameter_counter -eq 4 ]; then
+      searchLink  $machineName
 else
     helpPanel
 fi
