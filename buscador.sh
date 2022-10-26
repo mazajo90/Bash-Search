@@ -23,6 +23,7 @@ function helpPanel(){
     echo -e "\t${green}m) Buscar por nombre de maquina${end}"
     echo -e "\t${green}y) Link de YouTube maquina ${end}"
     echo -e "\t${green}d) Buscar por dificultad ${end}"
+    echo -e "\t${green}o) Buscar por sistema Operativo${end}"
     echo -e "\t${green}h) Mostrar panel de ayuda${end}"
 }
 
@@ -91,25 +92,56 @@ function searchLink(){
 function searchDificulty(){
 
     difficulty="$1"
-    result="$(cat bundle.js | grep "dificultad: \"$difficulty\"" -B 5 | grep name | awk 'NF{print $NF}' | tr -d '"' | tr -d ',' | column)"
+    result="$(cat bundle.js | grep "dificultad: \"$difficulty\"" -B 5 | grep "name:" | awk 'NF{print $NF}' | tr -d '"' | tr -d ',' | column)"
     if [ "$result" ]; then
 	echo -e "\n${green}La dificultad es: $difficulty${end}\n"
-	cat bundle.js | grep "dificultad: \"$difficulty\"" -B 5 | grep name | awk 'NF{print $NF}' | tr -d '"' | tr -d ',' | column
+	cat bundle.js | grep "dificultad: \"$difficulty\"" -B 5 | grep "name:" | awk 'NF{print $NF}' | tr -d '"' | tr -d ',' | column
     else
 	echo -e "\n${red}La dificultad ingresada no existe${end}"
     fi
 }
 
+function searchOS(){
+     
+    os="$1"
+    result_os="$(cat bundle.js | grep "so: \"$os\"" -B 5 | grep "name: " | awk 'NF{print $NF}' | tr -d '"' | tr -d ',' | column)"
+    if [ "$result_os" ]; then
+	echo -e "\n${green}El sistema Operativo de la maquina es: $os${end}\n"
+	cat bundle.js | grep "so: \"$os\"" -B 5 | grep "name: " | awk 'NF{print $NF}' | tr -d '"' | tr -d ',' | column
+    else
+	echo -e "\n${red}El sistema operativo ingresado no existe${end}"
+    fi
+}
 
+function getOsDifficulty(){
+    
+    difficulty="$1"
+    os="$2"
+    
+    result_check="$(cat bundle.js | grep "so: \"$os\"" -C 4 | grep "dificultad: \"$difficulty\"" -B 5 | grep "name: " | awk 'NF{print $NF}' | tr -d '"' | tr -d ',' | column)"
+    if [ "$result_check" ]; then
+	echo -e "\n${green}Listando las maquina de dificultad $difficulty que tengan sistema operativo $os son:\n${end}"
+	cat bundle.js | grep "so: \"$os\"" -C 4 | grep "dificultad: \"$difficulty\"" -B 5 | grep "name: " | awk 'NF{print $NF}' | tr -d '"' | tr -d ',' | column
+   else
+	echo -e "\n${red}[!] Se ha ingresado una dificultad o sistema operativo incorrecto${end}"
+   fi
+}
+
+#Indicador
 declare -i parameter_counter=0
 
-while getopts "m:ui:y:d:h" arg; do
+#Regla
+declare -i regla_difficulty=0
+declare -i regla_os=0
+
+while getopts "m:ui:y:d:o:h" arg; do
     case $arg in
       m) machineName="$OPTARG"; let parameter_counter+=1;;
       u) let parameter_counter+=2;;
       i) ipAddress="$OPTARG"; let parameter_counter+=3;;
       y) machineName="$OPTARG"; let parameter_counter+=4;;
-      d) difficulty="$OPTARG"; let parameter_counter+=5;;
+      d) difficulty="$OPTARG"; regla_difficulty=1; let parameter_counter+=5;;
+      o) os="$OPTARG"; regla_os=1;let parameter_counter+=6;;
       h) ;;
     esac
 done
@@ -124,7 +156,11 @@ elif [ $parameter_counter -eq 4 ]; then
       searchLink  $machineName
 elif [ $parameter_counter -eq 5 ]; then
       searchDificulty $difficulty
+elif [ $parameter_counter -eq 6 ]; then
+      searchOS $os
+elif [ $regla_difficulty -eq 1 ] && [ $regla_os -eq 1 ]; then
+     getOsDifficulty $difficulty $os
 else
-    helpPanel
+     helpPanel
 fi
 
