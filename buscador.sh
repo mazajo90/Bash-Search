@@ -21,7 +21,8 @@ function helpPanel(){
     echo -e "\t${green}u) Descargar o actulizar archivos${end}"
     echo -e "\t${grenn}i) Busqueda por dirección IP${end}"
     echo -e "\t${green}m) Buscar por nombre de maquina${end}"
-    echo -e "\t${green}y) Link de YouTube maquina${end}"
+    echo -e "\t${green}y) Link de YouTube maquina ${end}"
+    echo -e "\t${green}d) Buscar por dificultad ${end}"
     echo -e "\t${green}h) Mostrar panel de ayuda${end}"
 }
 
@@ -87,14 +88,28 @@ function searchLink(){
 
 }
 
+function searchDificulty(){
+
+    difficulty="$1"
+    result="$(cat bundle.js | grep "dificultad: \"$difficulty\"" -B 5 | grep name | awk 'NF{print $NF}' | tr -d '"' | tr -d ',' | column)"
+    if [ "$result" ]; then
+	echo -e "\n${green}La dificultad es: $difficulty${end}\n"
+	cat bundle.js | grep "dificultad: \"$difficulty\"" -B 5 | grep name | awk 'NF{print $NF}' | tr -d '"' | tr -d ',' | column
+    else
+	echo -e "\n${red}La dificultad ingresada no existe${end}"
+    fi
+}
+
+
 declare -i parameter_counter=0
 
-while getopts "m:ui:y:h" arg; do
+while getopts "m:ui:y:d:h" arg; do
     case $arg in
       m) machineName="$OPTARG"; let parameter_counter+=1;;
       u) let parameter_counter+=2;;
       i) ipAddress="$OPTARG"; let parameter_counter+=3;;
       y) machineName="$OPTARG"; let parameter_counter+=4;;
+      d) difficulty="$OPTARG"; let parameter_counter+=5;;
       h) ;;
     esac
 done
@@ -107,6 +122,8 @@ elif [ $parameter_counter -eq 3 ]; then
       searchIpAddress $ipAddress
 elif [ $parameter_counter -eq 4 ]; then
       searchLink  $machineName
+elif [ $parameter_counter -eq 5 ]; then
+      searchDificulty $difficulty
 else
     helpPanel
 fi
